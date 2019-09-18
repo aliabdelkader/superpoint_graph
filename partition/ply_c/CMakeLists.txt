@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 #SET(PYTHON_INCLUDE_DIRS /usr/include/python2.7)
 find_package(PythonLibs)
 message("PYTHON LIBRARIES ARE " ${PYTHON_LIBRARIES})
+set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS} /home/fusionresearch/anaconda3/envs/superpoint_oxford/lib/python3.6/site-packages/numpy/core/include)
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 LINK_DIRECTORIES(${PYTHON_LIBRARY_DIRS})
 ##############################
