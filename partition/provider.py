@@ -208,6 +208,16 @@ def read_vkitti_format(raw_path):
     labels = data[:, -1]+1
     labels[(labels==14).nonzero()] = 0
     return xyz, rgb, labels
+
+#------------------------------------------------------------------------------
+def read_oxford_format(raw_path):
+
+    data = np.load(raw_path)
+    xyz = data[:,0:3].astype(np.float32)
+    rgb = data[:,3:6].astype(np.uint8)
+    labels = data[:,6].astype(np.uint8).reshape(-1,1)
+
+    return xyz,rgb,labels
 #------------------------------------------------------------------------------
 def object_name_to_label(object_class):
     """convert from object name in S3DIS to an int"""
