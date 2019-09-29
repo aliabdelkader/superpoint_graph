@@ -145,6 +145,9 @@ def dataset(args):
     elif args.dataset=='vkitti':
         dbinfo = get_vkitti_info(args)
         create_dataset = create_vkitti_datasets
+    elif args.dataset=="oxford":
+        dbinfo = get_oxford_info(args)
+        create_dataset = create_oxford_datasets
     else:
         raise NotImplementedError('Unknown dataset ' + args.dataset)
     return dbinfo, create_dataset
@@ -431,6 +434,7 @@ def create_model(args):
     print(model)    
     if args.cuda: 
         model.cuda()
+        print(torch.cuda.device_count())
     return model
 
 def resume(args):

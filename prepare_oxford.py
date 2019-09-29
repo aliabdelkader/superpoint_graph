@@ -144,6 +144,11 @@ def main():
             lidar_scan_path = root_dataset_dir / FOLDERS["lidar_scan_folder"] / ( image_num + FOLDERS_EXT["lidar_scan_folder"] )
             lidar_scan_data = read_lidar_scan(lidar_scan_path) 
 
+            # skip lidar scans that have nan values
+            nn = lidar_scan_data[np.isnan(lidar_scan_data)]
+            if not (nn.size == 0):
+                continue
+
             # read lidar projection
             lidar_projection_path = root_dataset_dir / FOLDERS["lidar_project_folder"] / ( image_num + FOLDERS_EXT["lidar_project_folder"] )
             lidar_projection_data = read_lidar_projection(lidar_projection_path)
@@ -165,15 +170,15 @@ def main():
 
             # result array to be saved
             # result shape [ number of points, x,y,z, r,g,b, label]
-            result = np.zeros((lidar_scan_data.shape[0],7), dtype=np.float64)
+            result = np.zeros((lidar_scan_data.shape[0],7))
 
             # loop over every point
             for i in range(lidar_scan_data.shape[0]):
                 # set values of result 
                 x,y = lidar_projection_data[i,:]
                 result[i,3:6] = image[y,x].astype(np.uint8)
-                result[i,:3] = lidar_scan_data[i,:]
-                result[i,6] = lidar_labels_data[i]
+                result[i,:3] = lidar_scan_data[i,:].astype(np.float32)
+                result[i,6] = lidar_labels_data[i].astype(np.uint8)
             
             #save file
             outfile = str(output_dir / image_num )+ ".npy"

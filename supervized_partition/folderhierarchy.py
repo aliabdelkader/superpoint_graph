@@ -21,6 +21,10 @@ class FolderHierachy:
         elif dataset_name=='vkitti':
             self._outputdir = os.path.join(outputdir, 'cv' + str(cv_fold))
             self._folders  = ["01/", "02/", "03/", "04/", "05/", "06/"]
+
+        elif dataset_name=='oxford':
+            self._outputdir = outputdir
+            self._folders  = ["2014-06-24-14-20-41/","2014-05-14-13-59-05/","2014-05-06-13-14-58/"]
         
         if not os.path.exists(self._outputdir):
             os.makedirs(self._outputdir)

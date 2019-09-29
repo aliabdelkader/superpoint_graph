@@ -64,6 +64,9 @@ def main():
     elif args.dataset == 'vkitti':
         folders = ["01/", "02/","03/", "04/","05/", "06/"]
         n_labels = 13 #number of classes
+    elif args.dataset == "oxford":
+        folders = ["2014-06-24-14-20-41/","2014-05-14-13-59-05/","2014-05-06-13-14-58/"]
+        n_labels = 22 #number of classes
     elif args.dataset == 'custom_dataset':
         folders = ["train/", "test/"]
         n_labels = 10 #number of classes
@@ -90,7 +93,8 @@ def main():
             files = glob.glob(data_folder + "*.txt")
         elif args.dataset == 'vkitti':
             files = glob.glob(data_folder + "*.npy")
-            
+        elif args.dataset == 'oxford':
+            files = glob.glob(data_folder + "*.npy")            
         if (len(files) == 0):
             continue
             #raise ValueError('%s is empty' % data_folder)
@@ -107,6 +111,9 @@ def main():
                 label_file = data_folder + file_name + ".labels"
                 str_file    = str_folder + file_name_short + '.h5'
             elif args.dataset=='vkitti':
+                data_file   = data_folder + file_name + ".npy"
+                str_file    = str_folder  + file_name + '.h5'
+            elif args.dataset=='oxford':
                 data_file   = data_folder + file_name + ".npy"
                 str_file    = str_folder  + file_name + '.h5'
             i_file = i_file + 1
@@ -140,6 +147,11 @@ def main():
                     xyz, rgb, labels = read_vkitti_format(data_file)
                     if pruning:
                         xyz, rgb, labels, o = libply_c.prune(xyz.astype('f4'), args.voxel_width, rgb.astype('uint8'), labels.astype('uint8'), np.zeros(1, dtype='uint8'), n_labels, 0)
+                elif args.dataset == 'oxford':
+                    xyz, rgb, labels = read_oxford_format(data_file)
+                    if pruning:
+                        xyz, rgb, labels, o = libply_c.prune(xyz.astype('f4'), args.voxel_width, rgb.astype('uint8'), labels.astype('uint8'), np.zeros(1, dtype='uint8'), n_labels, 0)
+   
                     #---compute nn graph-------
                 n_ver = xyz.shape[0]    
                 print("computing NN structure")
@@ -164,6 +176,14 @@ def main():
                     dump, objects = libcp.cutpursuit2(np.array(hard_labels).reshape((n_ver,1)).astype('f4'), edg_source, edg_target, edge_weight, node_weight, 0.01)
                     is_transition = objects[graph_nn["source"]]!=objects[graph_nn["target"]]
                 elif args.dataset=='vkitti':
+                    #we define the objects as the constant connected components of the labels
+                    hard_labels = np.argmax(labels, 1)
+                    is_transition = hard_labels[graph_nn["source"]]!=hard_labels[graph_nn["target"]]
+                    
+                    dump, objects = libply_c.connected_comp(n_ver \
+                       , graph_nn["source"].astype('uint32'), graph_nn["target"].astype('uint32') \
+                       , (is_transition==0).astype('uint8'), 0)
+                elif args.dataset=='oxford':
                     #we define the objects as the constant connected components of the labels
                     hard_labels = np.argmax(labels, 1)
                     is_transition = hard_labels[graph_nn["source"]]!=hard_labels[graph_nn["target"]]
@@ -234,7 +254,7 @@ def read_structure(file_name, read_geof):
     edg_target = np.array(data_file['target'], dtype='int').squeeze()
     is_transition = np.array(data_file['is_transition'])
     objects = np.array(data_file['objects'][()])
-    labels = np.array(data_file['labels']).squeeze()
+    labels = np.array(data_file['labels']).squeeze().reshape(-1,1)
     if len(labels.shape) == 0:#dirty fix
         labels = np.array([0])
     if len(is_transition.shape) == 0:#dirty fix
@@ -266,7 +286,40 @@ def get_vkitti_info(args):
         'classes': 13,
         'inv_class_map': {0:'Terrain', 1:'Tree', 2:'Vegetation', 3:'Building', 4:'Road', 5:'GuardRail', 6:'TrafficSign', 7:'TrafficLight', 8:'Pole', 9:'Misc', 10:'Truck', 11:'Car', 12:'Van', 13:'None'},
     }
-    
+
+def get_oxford_info(args):
+    #for now, no edge attributes
+
+    semantic_colors_dict = {
+        'road'          : [128, 64,128],
+        'sidewalk'      : [244, 35,232],
+        'building'      : [ 70, 70, 70],
+        'wall'          : [102,102,156],
+        'fence'         : [190,153,153],
+        'pole'          : [153,153,153],
+        'traffic light' : [250,170, 30],
+        'traffic sign'  : [220,220,  0],
+        'vegetation'    : [107,142, 35],
+        'terrain'       : [152,251,152],
+        'sky'           : [ 70,130,180],
+        'person'        : [220, 20, 60],
+        'rider'         : [255,  0,  0],
+        'car'           : [  0,  0,142],
+        'truck'         : [  0,  0, 70],
+        'bus'           : [  0, 60,100],
+        'train'         : [  0, 80,100],
+        'motorcycle'    : [  0,  0,230],
+        'bicycle'       : [119, 11, 32],
+        'void'          : [  0,  0,  0],
+        'outside camera': [255, 255, 0],
+        'egocar'        : [123, 88,  4],
+        #'unlabelled'    : [ 81,  0, 81]
+	}
+
+    return {
+        'classes': 22,
+        'inv_class_map': {i:key for i,key in enumerate(semantic_colors_dict.keys())}
+    }
     
                 
 def create_s3dis_datasets(args, test_seed_offset=0):
@@ -283,6 +336,30 @@ def create_s3dis_datasets(args, test_seed_offset=0):
     for fname in sorted(os.listdir(path)):
         if fname.endswith(".h5"):
             testlist.append(path+fname)
+           
+    return tnt.dataset.ListDataset(trainlist,
+                                   functools.partial(graph_loader, train=True, args=args, db_path=args.ROOT_PATH)), \
+           tnt.dataset.ListDataset(testlist,
+                                   functools.partial(graph_loader, train=False, args=args, db_path=args.ROOT_PATH))
+
+def create_oxford_datasets(args, test_seed_offset=0):
+    """ Gets training and test datasets. """
+    # Load formatted clouds
+    testlist, trainlist = [], []
+    train_folders = ["2014-06-24-14-20-41","2014-05-14-13-59-05"]
+    test_folders = ["2014-05-06-13-14-58"]
+
+    for tr in train_folders:
+        path = '{}/features_supervision/{}/'.format(args.ROOT_PATH, tr)
+        for fname in sorted(os.listdir(path)):
+            if fname.endswith(".h5"):
+                trainlist.append(path+fname)
+    
+    for ts in test_folders:
+        path = '{}/features_supervision/{}/'.format(args.ROOT_PATH, ts)
+        for fname in sorted(os.listdir(path)):
+            if fname.endswith(".h5"):
+                trainlist.append(path+fname)
            
     return tnt.dataset.ListDataset(trainlist,
                                    functools.partial(graph_loader, train=True, args=args, db_path=args.ROOT_PATH)), \
