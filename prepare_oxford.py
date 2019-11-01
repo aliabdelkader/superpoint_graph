@@ -18,17 +18,53 @@ FOLDERS_EXT = {
     "lidar_project_folder":".txt",
     "labels_folder":".csv"
 }
-def find_all_images(dataset_dir: Path) -> list:
+label_map = {
+
+    0: 1,  # 'road': [128, 64, 128]
+    1: 2,  # 'sidewalk': [244, 35, 232]
+    2: 3,  # 'building': [70, 70, 70],
+    3: 4,  # 'wall': [102, 102, 156],
+    4: 5,  # 'fence': [190, 153, 153],
+    5: 6,  # 'pole': [153, 153, 153],
+    6: 7,  # 'traffic light': [250, 170, 30],
+    7: 8,  # 'traffic sign': [220, 220, 0],
+    8: 9,  # 'vegetation': [107, 142, 35],
+    9: 10,  # 'terrain': [152, 251, 152],
+    10: 11,  # 'sky': [70, 130, 180],
+    11: 12,  # 'person': [220, 20, 60],
+    12: 13,  # 'rider': [255, 0, 0],
+    13: 14,  # 'car': [0, 0, 142],
+    14: 15,  # 'truck': [0, 0, 70],
+    15: 16,  # 'bus': [0, 60, 100],
+    16: 17,  # 'train': [0, 80, 100],
+    17: 18,  # 'motorcycle': [0, 0, 230],
+    18: 19,  # 'bicycle': [119, 11, 32],
+    19: 0,  # 'void': [0, 0, 0],
+    20: 0,  # 'outside camera': [255, 255, 0],
+    21: 0, #'egocar': [123, 88, 4],
+}
+def convert_ground_truth(original_label):
     """
-    function finds all images in a folder
+    function changes ground truth label according to lidar map
+    Args:
+        original_label: label from annotation files
+    return:
+        new label
+    """
+
+    return label_map[original_label]
+
+def find_all_lidar_scans(dataset_dir: Path) -> list:
+    """
+    function finds all scans in a folder
 
     dataset_dir: Pathlib, root directory of chunk
 
     returns
-        list of images found
+        list of scans found
     """
 
-    images_list = dataset_dir.glob("*"+FOLDERS_EXT["image_folder"])
+    images_list = dataset_dir.glob("*"+FOLDERS_EXT["lidar_scan_folder"])
     images_list = sorted([i.stem for i in images_list])
 
     if len(images_list) <= 0:
@@ -130,18 +166,18 @@ def main():
         output_dir.mkdir(parents=True, exist_ok=True)
     
     # find all images
-    images_names = find_all_images(dataset_dir=root_dataset_dir / FOLDERS["image_folder"] )
+    scans_names = find_all_lidar_scans(dataset_dir=root_dataset_dir / FOLDERS["lidar_scan_folder"] )
 
-    if images_names is not None:
+    if scans_names is not None:
         # remove glare images
-        images_names = images_names[start_index:]
+        # images_names = images_names[start_index:]
 
-        print("number of images after removing glare is {num}".format(num=len(images_names)))
+        # print("number of images after removing glare is {num}".format(num=len(images_names)))
 
-        for image_num in tqdm(images_names):
+        for scan_num in tqdm(scans_names):
 
             # read lidar scan
-            lidar_scan_path = root_dataset_dir / FOLDERS["lidar_scan_folder"] / ( image_num + FOLDERS_EXT["lidar_scan_folder"] )
+            lidar_scan_path = root_dataset_dir / FOLDERS["lidar_scan_folder"] / ( scan_num + FOLDERS_EXT["lidar_scan_folder"] )
             lidar_scan_data = read_lidar_scan(lidar_scan_path) 
 
             # skip lidar scans that have nan values
@@ -150,15 +186,15 @@ def main():
                 continue
 
             # read lidar projection
-            lidar_projection_path = root_dataset_dir / FOLDERS["lidar_project_folder"] / ( image_num + FOLDERS_EXT["lidar_project_folder"] )
+            lidar_projection_path = root_dataset_dir / FOLDERS["lidar_project_folder"] / ( scan_num + FOLDERS_EXT["lidar_project_folder"] )
             lidar_projection_data = read_lidar_projection(lidar_projection_path)
 
             # read lidar label
-            lidar_labels_path = root_dataset_dir / FOLDERS["labels_folder"] / ( image_num + FOLDERS_EXT["labels_folder"] )
+            lidar_labels_path = root_dataset_dir / FOLDERS["labels_folder"] / ( scan_num + FOLDERS_EXT["labels_folder"] )
             lidar_labels_data = read_lidar_labels(lidar_labels_path)
 
             # read image
-            image_path = root_dataset_dir / FOLDERS["image_folder"] / ( image_num + FOLDERS_EXT["image_folder"] )
+            image_path = root_dataset_dir / FOLDERS["image_folder"] / ( scan_num + FOLDERS_EXT["image_folder"] )
             image = read_image(image_path)
 
             # index of points inside image
@@ -178,10 +214,11 @@ def main():
                 x,y = lidar_projection_data[i,:]
                 result[i,3:6] = image[y,x].astype(np.uint8)
                 result[i,:3] = lidar_scan_data[i,:].astype(np.float32)
-                result[i,6] = lidar_labels_data[i].astype(np.uint8)
+                
+                result[i,6] = convert_ground_truth(lidar_labels_data[i].astype(np.uint8)[0])
             
             #save file
-            outfile = str(output_dir / image_num )+ ".npy"
+            outfile = str(output_dir / scan_num )+ ".npy"
             np.save(outfile, result)
 
 

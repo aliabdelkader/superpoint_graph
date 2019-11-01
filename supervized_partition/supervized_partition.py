@@ -69,7 +69,7 @@ def parse_args():
     # Learning process arguments
     parser.add_argument('--cuda', default=1, type=int, help='Bool, use cuda')
     parser.add_argument('--nworkers', default=0, type=int, help='Num subprocesses to use for data loading. 0 means that the data will be loaded in the main process')
-    parser.add_argument('--test_nth_epoch', default=10, type=int, help='Test each n-th epoch during training')
+    parser.add_argument('--test_nth_epoch', default=1, type=int, help='Test each n-th epoch during training')
     parser.add_argument('--save_nth_epoch', default=1, type=int, help='Save model each n-th epoch during training')
     parser.add_argument('--test_multisamp_n', default=10, type=int, help='Average logits obtained over runs with different seeds')
     # Optimization arguments
@@ -269,7 +269,7 @@ def embed(args):
                 
                 if args.cuda:
                     is_transition = is_transition.to('cuda',non_blocking=True)
-                    #labels = torch.from_numpy(labels).cuda()
+                    labels = torch.from_numpy(labels).cuda()
                     objects = objects.to('cuda',non_blocking=True)
                     clouds, clouds_global, nei = clouds_data
                     clouds_data = (clouds.to('cuda',non_blocking=True),clouds_global.to('cuda',non_blocking=True),nei) 

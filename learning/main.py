@@ -69,6 +69,7 @@ def main():
     parser.add_argument('--SEMA3D_PATH', default='datasets/semantic3d')
     parser.add_argument('--S3DIS_PATH', default='datasets/s3dis')
     parser.add_argument('--VKITTI_PATH', default='datasets/vkitti')
+    parser.add_argument('--OXFORD_PATH', default='datasets/oxford')
     parser.add_argument('--CUSTOM_SET_PATH', default='datasets/custom_set')
 
     # Model
@@ -142,6 +143,10 @@ def main():
         create_dataset = vkitti_dataset.get_datasets
     elif args.dataset=='custom_dataset':
         import custom_dataset #<- to write!
+        dbinfo = custom_dataset.get_info(args)
+        create_dataset = custom_dataset.get_datasets
+    elif args.dataset=='oxford':
+        import oxford_dataset 
         dbinfo = custom_dataset.get_info(args)
         create_dataset = custom_dataset.get_datasets
     else:

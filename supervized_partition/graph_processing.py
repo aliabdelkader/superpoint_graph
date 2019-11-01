@@ -291,6 +291,7 @@ def get_oxford_info(args):
     #for now, no edge attributes
 
     semantic_colors_dict = {
+        'void'          : [  0,  0,  0],
         'road'          : [128, 64,128],
         'sidewalk'      : [244, 35,232],
         'building'      : [ 70, 70, 70],
@@ -310,14 +311,13 @@ def get_oxford_info(args):
         'train'         : [  0, 80,100],
         'motorcycle'    : [  0,  0,230],
         'bicycle'       : [119, 11, 32],
-        'void'          : [  0,  0,  0],
-        'outside camera': [255, 255, 0],
-        'egocar'        : [123, 88,  4],
+        # 'outside camera': [255, 255, 0],
+        # 'egocar'        : [123, 88,  4],
         #'unlabelled'    : [ 81,  0, 81]
 	}
 
     return {
-        'classes': 22,
+        'classes': 20,
         'inv_class_map': {i:key for i,key in enumerate(semantic_colors_dict.keys())}
     }
     
@@ -346,8 +346,9 @@ def create_oxford_datasets(args, test_seed_offset=0):
     """ Gets training and test datasets. """
     # Load formatted clouds
     testlist, trainlist = [], []
-    train_folders = ["2014-06-24-14-20-41","2014-05-14-13-59-05"]
-    test_folders = ["2014-05-06-13-14-58"]
+    train_folders = ["2014-06-24-14-20-41", "2014-05-06-13-14-58"]
+    test_folders = ["2014-05-14-13-59-05"]
+
 
     for tr in train_folders:
         path = '{}/features_supervision/{}/'.format(args.ROOT_PATH, tr)
@@ -522,8 +523,7 @@ def graph_collate(batch):
     batch_ver_size_cumsum = np.array([c.shape[0] for c in labels]).cumsum()
     batch_n_edg_cumsum = np.array([c.shape[0] for c in edg_source]).cumsum()
     batch_n_objects_cumsum = np.array([c.max() for c in objects]).cumsum()
-    
-    
+
     clouds = torch.cat(clouds, 0)
     clouds_global = torch.cat(clouds_global, 0)
     xyz = np.vstack(xyz)

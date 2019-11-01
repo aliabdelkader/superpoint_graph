@@ -42,6 +42,8 @@ elif args.dataset == 'sema3d':
 elif args.dataset == 'custom_dataset':
     folders = ["train/", "test/"]
     n_labels = 10 #number of classes
+elif args.dataset == "oxford":
+    folders = ["2014-06-24-14-20-41", "2014-05-06-13-14-58", "2014-05-14-13-59-05"]
 else:
     raise ValueError('%s is an unknown data set' % dataset)
 

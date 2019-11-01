@@ -158,6 +158,29 @@ def get_color_from_label(object_label, dataset):
             1: [ 255, 0, 0], #'classe A' -> red
             2: [ 0, 255, 0], #'classeB' -> green
             }.get(object_label, -1)
+    elif (dataset == 'oxford'): #Custom set
+        object_label =  {
+            0: [0, 0, 0], # void
+            1: [128, 64, 128], # road
+            2: [244, 35, 232], # sidewalk
+            3: [70, 70, 70], # building
+            4: [102, 102, 156], # wall
+            5: [190, 153, 153], # fence
+            6: [153, 153, 153], # pole
+            7: [250, 170, 30], # traffic light
+            8: [220, 220, 0], # traffic sign
+            9: [107, 142, 35], # vegetation
+            10: [152, 251, 152], # terrain
+            11: [70, 130, 180], # sky
+            12: [220, 20, 60], # person
+            13: [255, 0, 0], # rider
+            14: [0, 0, 142], # car
+            15: [0, 0, 70], # truck
+            16: [0, 60, 100], # bus
+            17: [0, 80, 100], # train
+            18: [0, 0, 230], # motorcycle
+            19: [119, 11, 32], # bicycle
+            }.get(object_label, -1)
     else: 
         raise ValueError('Unknown dataset: %s' % (dataset))
     if object_label == -1:
