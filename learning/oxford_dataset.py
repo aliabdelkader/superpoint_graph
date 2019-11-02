@@ -20,8 +20,9 @@ import random
 
 def get_datasets(args, test_seed_offset=0):
     """ Gets training and test datasets. """
-    train_folders = ["2014-06-24-14-20-41", "2014-05-06-13-14-58"]
-    test_folders = ["2014-05-14-13-59-05"]
+    train_folders = ["trainset"]
+    val_folders =  ["valset"] 
+    test_folders = ["testset"]
 
     # Load superpoints graphs
     testlist, trainlist, validlist = [], [], []
@@ -29,22 +30,20 @@ def get_datasets(args, test_seed_offset=0):
         path = '{}/superpoint_graphs/{}/'.format(args.OXFORD_PATH, tr)
         for fname in sorted(os.listdir(path)):
             if fname.endswith(".h5"):
-                if args.use_val_set:
-                    flip_coin = random.random()
-                    if flip_coin < 0.9:
-                        #training set
-                        trainlist.append(spg.spg_reader(args, path + fname, True))
-                    else:
-                        #validation set
-                        validlist.append(spg.spg_reader(args, path + fname, True))
-                else:
-                    #training set
+                #training set
+                trainlist.append(spg.spg_reader(args, path + fname, True))
+    
+    if args.use_val_set:
+        for v in val_folders:
+            path = '{}/superpoint_graphs/{}/'.format(args.OXFORD_PATH, v)
+            for fname in sorted(os.listdir(path)):
+                if fname.endswith(".h5"):
+                    #validation set
                     trainlist.append(spg.spg_reader(args, path + fname, True))
-
-
+                
     #evaluation set
     for ts in test_folders:
-        path = '{}/features_supervision/{}/'.format(args.ROOT_PATH, ts)
+        path = '{}/superpoint_graphs/{}/'.format(args.OXFORD_PATH, ts)
         for fname in sorted(os.listdir(path)):
             if fname.endswith(".h5"):
                 testlist.append(spg.spg_reader(args, path + fname, True))
@@ -98,7 +97,7 @@ def get_info(args):
         else:
             edge_feats += 1
     if args.loss_weights == 'none':
-        weights = np.ones((20,),dtype='f4')
+        weights = np.ones((19,),dtype='f4')
     else:
         weights = h5py.File(args.OXFORD_PATH + "/parsed/class_count.h5")["class_count"][:].astype('f4')
         weights = weights[:,[i for i in range(6) if i != args.cvfold-1]].sum(1)
@@ -116,12 +115,12 @@ def get_info(args):
 
 def preprocess_pointclouds(OXFORD_PATH):
     """ Preprocesses data by splitting them by components and normalizing."""
-    class_count = np.zeros((20,6),dtype='int')
-    folders = ["2014-06-24-14-20-41", "2014-05-06-13-14-58", "2014-05-14-13-59-05"]
+    class_count = np.zeros((19,),dtype='int')
+    folders = ["trainset", "valset", "testset"]
 
     for folder in folders:
         pathP = '{}/parsed/{}/'.format(OXFORD_PATH, folder)
-        pathD = '{}/features_supervision/{}/'.format(OXFORD_PATH, folder)
+        pathD = '{}/features/{}/'.format(OXFORD_PATH, folder)
         pathC = '{}/superpoint_graphs/{}/'.format(OXFORD_PATH, folder)
         if not os.path.exists(pathP):
             os.makedirs(pathP)
@@ -133,12 +132,12 @@ def preprocess_pointclouds(OXFORD_PATH):
                 f = h5py.File(pathD + file, 'r')
                 xyz = f['xyz'][:]
                 rgb = f['rgb'][:].astype(np.float)
-                
+
                 labels = f['labels'][:]
                 hard_labels = np.argmax(labels[:,1:],1)
-                label_count = np.bincount(hard_labels, minlength=13)
-                class_count[:,n-1] = class_count[:,n-1] + label_count
-                
+                label_count = np.bincount(hard_labels, minlength=19)
+                class_count = class_count + label_count
+            
                 e = (f['xyz'][:,2][:] -  np.min(f['xyz'][:,2]))/ (np.max(f['xyz'][:,2]) -  np.min(f['xyz'][:,2]))-0.5
 
                 rgb = rgb/255.0 - 0.5

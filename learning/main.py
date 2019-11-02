@@ -1,3 +1,4 @@
+#/home/fusionresearch/anaconda3/envs/superpoint_oxford/bin python -W ignore::DeprecationWarning
 """
     Large-scale Point Cloud Semantic Segmentation with Superpoint Graphs
     http://arxiv.org/abs/1711.09869
@@ -123,7 +124,7 @@ def main():
         f.write(" ".join(["'"+a+"'" if (len(a)==0 or a[0]!='-') else a for a in sys.argv]))
 
     set_seed(args.seed, args.cuda)
-    logging.getLogger().setLevel(logging.INFO)  #set to logging.DEBUG to allow for more prints
+    logging.getLogger().setLevel(logging.ERROR)  #set to logging.DEBUG to allow for more prints
     if (args.dataset=='sema3d' and args.db_test_name.startswith('test')) or (args.dataset.startswith('s3dis_02') and args.cvfold==2):
         # needed in pytorch 0.2 for super-large graphs with batchnorm in fnet  (https://github.com/pytorch/pytorch/pull/2919)
         torch.backends.cudnn.enabled = False
@@ -147,8 +148,8 @@ def main():
         create_dataset = custom_dataset.get_datasets
     elif args.dataset=='oxford':
         import oxford_dataset 
-        dbinfo = custom_dataset.get_info(args)
-        create_dataset = custom_dataset.get_datasets
+        dbinfo = oxford_dataset.get_info(args)
+        create_dataset = oxford_dataset.get_datasets
     else:
         raise NotImplementedError('Unknown dataset ' + args.dataset)
 
