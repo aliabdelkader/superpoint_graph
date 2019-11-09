@@ -1,11 +1,11 @@
-export CUDA_VISIBLE_DEVICES=0
+
 export OXFORD_DIR="oxford"
 
 # bash ./run_prepare_oxford
 
 # python supervized_partition/graph_processing.py --ROOT_PATH $OXFORD_DIR --dataset oxford --voxel_width 0 --use_voronoi 1 --plane_model 0
 
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0
 
 
 
@@ -29,6 +29,11 @@ export CUDA_VISIBLE_DEVICES=1
 
 # python learning/oxford_dataset.py --OXFORD_PATH $OXFORD_DIR
 
+# python learning/main.py --dataset oxford --OXFORD_PATH $OXFORD_DIR --db_test_name testset --db_train_name trainset \
+# --epochs 500 --lr_steps '[350, 400, 450]' --test_nth_epoch 1 --model_config 'gru_10,f_19' --ptn_nfeat_stn 11 \
+# --nworkers 2 --pc_attrib xyzrgbelpsv --odir "results/oxford/trainval_best" --use_val_set 1
+
+
 python learning/main.py --dataset oxford --OXFORD_PATH $OXFORD_DIR --db_test_name testset --db_train_name trainset \
---epochs 500 --lr_steps '[350, 400, 450]' --test_nth_epoch 1 --model_config 'gru_10,f_19' --ptn_nfeat_stn 11 \
---nworkers 2 --pc_attrib xyzrgbelpsv --odir "results/oxford/trainval_best" --use_val_set 1
+--epochs -1 --lr_steps '[350, 400, 450]' --test_nth_epoch 1 --model_config 'gru_10,f_19' --ptn_nfeat_stn 11 \
+--nworkers 1 --pc_attrib xyzrgbelpsv --odir "results/oxford/trainval_best" --resume RESUME --cuda 1 --test_multisamp_n 1 \
